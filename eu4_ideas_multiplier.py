@@ -6,7 +6,7 @@ import os
 import re
 from io import TextIOWrapper
 
-STEAM_DIR = "D:\\SteamLibrary"
+STEAM_DIR = "D:\\SteamLibrary\\"
 EUROPA_PATH = "steamapps\\common\\Europa Universalis IV\\common\\"
 ILLEGAL_MODIFIERS = ["factor", "max_level", "default", "female_advisor_chance"]
 
