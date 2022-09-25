@@ -9,44 +9,45 @@ from io import TextIOWrapper
 STEAM_DIR = "D:\\SteamLibrary\\"
 EUROPA_PATH = "steamapps\\common\\Europa Universalis IV\\common\\"
 ILLEGAL_MODIFIERS = ["factor", "max_level", "default", "female_advisor_chance"]
+IGNORE_EXPRESSION = r"\s+(?:ai_will_do|chance|trigger)\s+=\s+{"
 
 
-def _process_directory(inroot: str,
-                       outroot: str,
+def _process_directory(in_root: str,
+                       out_root: str,
                        dir: str,
-                       mult: float) -> None:
-    os.makedirs(f"{outroot}{dir}\\", exist_ok=True)
-    files = glob.glob(f"{dir}\\*.txt", root_dir=inroot)
+                       multiplier: float) -> None:
+    os.makedirs(f"{out_root}{dir}\\", exist_ok=True)
+    files = glob.glob(f"{dir}\\*.txt", root_dir=in_root)
     for file in files:
-        with open(f"{inroot}{file}", mode='r') as infile:
-            with open(f"{outroot}{file}", mode='w') as outfile:
-                _process_file(infile, outfile, mult)
+        with open(f"{in_root}{file}", mode='r') as in_file:
+            with open(f"{out_root}{file}", mode='w') as out_file:
+                _process_file(in_file, out_file, multiplier)
 
 
-def _process_file(infile: TextIOWrapper,
-                  outfile: TextIOWrapper,
-                  mult: float) -> None:
-    lockvar = 0  # tracks brackets for unalterable blocks
-    for line in infile:
-        if re.match(r"\s+(?:ai_will_do|chance)\s+=\s+{", line) or lockvar > 0:
-            lockvar += line.count('{') - line.count('}')
-            outfile.write(line)
+def _process_file(in_file: TextIOWrapper,
+                  out_file: TextIOWrapper,
+                  multiplier: float) -> None:
+    lock_var = 0  # tracks brackets for unalterable blocks
+    for line in in_file:
+        if re.match(IGNORE_EXPRESSION, line) or lock_var > 0:
+            lock_var += line.count('{') - line.count('}')
+            out_file.write(line)
         else:
-            outfile.write(
+            out_file.write(
                 re.sub(
                     r"(\S+)\s+=\s+(-?\d+\.?\d*)",
-                    lambda x: _process_line(x, mult),
+                    lambda x: _process_line(x, multiplier),
                     line
                 )
             )
 
 
-def _process_line(match: re.Match[str], mult: float) -> str:
+def _process_line(match: re.Match[str], multiplier: float) -> str:
     if re.fullmatch(r"level_cost_\d+", match.group(1)):
         return match.group(0)
     if match.group(1) in ILLEGAL_MODIFIERS:
         return match.group(0)
-    return f"{match.group(1)} = {float(match.group(2)) * mult}"
+    return f"{match.group(1)} = {float(match.group(2)) * multiplier}"
 
 
 def _setup_parser() -> argparse.ArgumentParser:
