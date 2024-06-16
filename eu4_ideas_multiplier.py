@@ -1,86 +1,121 @@
-#! python3
+#!python3
 
 import argparse
-import glob
-import os
 import re
+import sys
 from io import TextIOWrapper
-
-STEAM_DIR = "D:\\SteamLibrary\\"
-EUROPA_PATH = "steamapps\\common\\Europa Universalis IV\\common\\"
-ILLEGAL_MODIFIERS = ["factor", "max_level", "default", "female_advisor_chance"]
-IGNORE_EXPRESSION = r"\s+(?:ai_will_do|chance|trigger)\s+=\s+{"
+from typing import Callable
 
 
-def _process_directory(in_root: str,
-                       out_root: str,
-                       dir: str,
-                       multiplier: float) -> None:
-    os.makedirs(f"{out_root}{dir}\\", exist_ok=True)
-    files = glob.glob(f"{dir}\\*.txt", root_dir=in_root)
-    for file in files:
-        with open(f"{in_root}{file}", mode='r') as in_file:
-            with open(f"{out_root}{file}", mode='w') as out_file:
-                _process_file(in_file, out_file, multiplier)
-
-
-def _process_file(in_file: TextIOWrapper,
-                  out_file: TextIOWrapper,
-                  multiplier: float) -> None:
-    lock_var = 0  # tracks brackets for unalterable blocks
+def process_file(in_file: TextIOWrapper,
+                 out_file: TextIOWrapper,
+                 multiplier: float,
+                 block_predicate: Callable[[list[str]], bool],
+                 illegal_modifiers: list[str]) -> None:
+    blocks = list[str]()
     for line in in_file:
-        if re.match(IGNORE_EXPRESSION, line) or lock_var > 0:
-            lock_var += line.count('{') - line.count('}')
-            out_file.write(line)
-        else:
-            out_file.write(
-                re.sub(
-                    r"(\S+)\s+=\s+(-?\d+\.?\d*)",
-                    lambda x: _process_line(x, multiplier),
-                    line
-                )
+        output_line = line
+        if (match := re.fullmatch(r"\s*(\S+)\s+=\s+\{\s*(?:#.*)?", line)):
+            blocks.append(match.group(1))
+        elif re.fullmatch(r"\s*\}\s*(?:#.*)?", line):
+            blocks.pop()
+        elif block_predicate(blocks):
+            output_line = re.sub(
+                pattern=r"(\S+)\s+=\s+(-?\d+\.?\d*)",
+                repl=lambda x: process_line(x, multiplier, illegal_modifiers),
+                string=line
             )
+        out_file.write(output_line)
 
 
-def _process_line(match: re.Match[str], multiplier: float) -> str:
-    if re.fullmatch(r"level_cost_\d+", match.group(1)):
-        return match.group(0)
-    if match.group(1) in ILLEGAL_MODIFIERS:
+def process_line(match: re.Match[str],
+                 multiplier: float,
+                 illegal_modifiers: list[str]) -> str:
+    if any(
+        re.fullmatch(illegal_modifier, match.group(1))
+        for illegal_modifier in illegal_modifiers
+    ):
         return match.group(0)
     return f"{match.group(1)} = {float(match.group(2)) * multiplier}"
 
 
-def _setup_parser() -> argparse.ArgumentParser:
+def ideas_predicate(blocks: list[str]) -> bool:
+    return not any(
+        bad_block in blocks
+        for bad_block in ['trigger', 'ai_will_do']
+    )
+
+
+def policies_predicate(blocks: list[str]) -> bool:
+    return not any(
+        bad_block in blocks
+        for bad_block in ['potential', 'allow', 'ai_will_do']
+    )
+
+
+def custom_ideas_predicate(blocks: list[str]) -> bool:
+    return not 'chance' in blocks
+
+
+def setup_parser() -> argparse.ArgumentParser:
+    EPILOG_MSG = """\
+    This program assumes that input follows the formatting specified by the
+    CWTools VSCode extension. Each statement should occupy its own line,
+    including block declarations and closings. Patterns such as
+    BLOCK = { MODIFIER = VALUE } may result in some modifiers not being
+    processed properly.
+    """
+
     parser = argparse.ArgumentParser(
-        description="Multiplies the effects of ideas and policies in EU4"
-        + " source files."
+        description="Multiplies the effects of modifiers in EU4 source files.",
+        epilog=EPILOG_MSG
     )
     parser.add_argument(
-        '-m', '--multiplier',
-        default=10,
-        type=int
+        'source_type',
+        choices=['ideas', 'policies', 'custom_ideas'],
+        help="Modifier source type."
     )
     parser.add_argument(
-        '-i', '--root_in',
-        default=f"{STEAM_DIR}{EUROPA_PATH}",
-        help="Root input directory from which source directories are detected."
+        '-i', '--input',
+        nargs='?',
+        type=argparse.FileType('r', encoding='utf-8'),
+        default=sys.stdin,
+        help="Input file to parse. Defaults to standard input."
     )
     parser.add_argument(
-        '-o', '--root_out',
-        default=".\\common\\",
-        help="Root output directory to which modified directories are written to."
+        '-o', '--output',
+        nargs='?',
+        type=argparse.FileType('w', encoding='utf-8'),
+        default=sys.stdout,
+        help="Output file to write to. Defaults to standard output."
     )
-    parser.add_argument(
-        '-d', '--dirs',
-        nargs='+',
-        default=["custom_ideas", "ideas", "policies"],
-        metavar="DIRECTORY",
-        help="Directories to be modified."
-    )
+    parser.add_argument('-m', '--multiplier', default=10, type=int)
     return parser
 
 
 if __name__ == '__main__':
-    args = _setup_parser().parse_args()
-    for dir in args.dirs:
-        _process_directory(args.root_in, args.root_out, dir, args.multiplier)
+    args = setup_parser().parse_args()
+    block_predicate = {
+        'ideas': ideas_predicate,
+        'policies': policies_predicate,
+        'custom_ideas': custom_ideas_predicate
+    }[args.source_type]
+    illegal_modifiers = {
+        'ideas': [],
+        'policies': [],
+        'custom_ideas': [
+            r"level_cost_\d+",
+            r"max_level",
+            r"chance",
+            r"default"
+        ]
+    }[args.source_type]
+    with args.input as input:
+        with args.output as output:
+            process_file(
+                in_file=input,
+                out_file=output,
+                multiplier=args.multiplier,
+                block_predicate=block_predicate,
+                illegal_modifiers=illegal_modifiers
+            )
