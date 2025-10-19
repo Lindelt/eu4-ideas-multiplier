@@ -157,13 +157,15 @@ def load_modifiers(modifiers: TextIO,
 
 
 def process_expression(expression: pdx.Expression,
-                       modifiers: Mapping[str, int | float]) -> bool:
+                       modifiers: Mapping[str, int | float],
+                       ceiling: int | float | None = None) -> bool:
     if expression.lhs.value in IGNORE_BLOCKS:
         return False
     if isinstance(expression.rhs, pdx.Block):
         res = False
         for child_expression in expression.rhs.entries:
-            res = process_expression(child_expression, modifiers) or res
+            res = process_expression(
+                child_expression, modifiers, ceiling) or res
         return res
     if (multiplier := modifiers.get(expression.lhs.value)) is not None:
         # Some modifier names may be used in other contexts
@@ -172,6 +174,8 @@ def process_expression(expression: pdx.Expression,
         if not isinstance(expression.rhs, pdx.Number):
             print(f"  {expression}")
             return False
+        if ceiling is not None:
+            multiplier = ceiling if ceiling < multiplier else multiplier
         expression.rhs.value *= multiplier
         return True
     return False
@@ -201,9 +205,15 @@ def process_file(path: pathlib.Path,
                                    ignore=ignore_static)
     with path.open(mode='r', encoding='Latin-1') as file:
         tree = pdx.parse_file(file)
+    # Special handling for military technologies, to prevent things
+    # from getting too far out of hand. Might make this configurable
+    # at some point.
+    ceiling = (2 if (path.parent.name == "technologies"
+                     and path.name == "mil.txt")
+               else None)
     changed = False
     for expression in tree:
-        changed = process_expression(expression, modifiers) or changed
+        changed = process_expression(expression, modifiers, ceiling) or changed
     return tree if changed else []
 
 
