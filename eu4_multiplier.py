@@ -6,7 +6,6 @@ import pathlib
 import re
 import tomllib
 from collections.abc import Collection, Iterable, Mapping
-from sys import stderr
 from typing import TextIO
 
 import paradox_parser as pdx
@@ -171,7 +170,8 @@ def process_expression(expression: pdx.Expression,
         # (e.g., merchants = yes in the diplomatic technology file).
         # Don't stop parsing, but make a note of them.
         if not isinstance(expression.rhs, pdx.Number):
-            print(f"  {expression}", file=stderr)
+            print(f"  {expression}")
+            return False
         expression.rhs.value *= multiplier
         return True
     return False
