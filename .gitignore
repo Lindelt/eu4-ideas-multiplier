@@ -1,3 +1,13 @@
+# Configuration
+*.toml
+!example.config.toml
+*.json
+!vanilla.modifiers.json
+
+# Parser testing and notes
+*.txt
+!modifiers.txt
+
 # Visual Studio Code files
 .vscode/
 

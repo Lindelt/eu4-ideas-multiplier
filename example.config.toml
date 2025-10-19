@@ -1,0 +1,197 @@
+# For use by the 'multiply' subcommand
+[multiply]
+
+# Path to the 'common' directory where modified files will be written.
+destination = "./source_mod_x10_patch/common"
+
+# List of paths to 'common' directories to be parsed for modifications.
+#
+# Identically named files from later targets will overwrite files from
+# earlier targets in the destination when modifications are made.
+targets = [
+  "C:/Steam/steamapps/common/Europa Universalis IV/common",
+  "./source_mod/common",
+]
+
+# List of static modifiers which should remain unmodified.
+ignore_static = [
+  "city",
+  "port",
+  "in_state",
+  "in_capital_state",
+  "coastal",
+  "non_coastal",
+  "coastal_sea",
+  "tropical",
+  "arctic",
+  "arid",
+  "sea_zone",
+  "land_province",
+  "mild_winter",
+  "normal_winter",
+  "severe_winter",
+  "mild_monsoon",
+  "normal_monsoon",
+  "severe_monsoon",
+  "blockaded",
+  "no_adjacent_controlled",
+  "provincial_tax_income",
+  "provincial_production_size",
+  "knowledge_sharing",
+  "manpower",
+  "province_razed",
+  "development",
+  "development_scaled",
+  "colony_level",
+  "native_assimilation",
+  "native_aggressiveness",
+  "core",
+  "non_core",
+  "colonial_core",
+  "territory_core",
+  "territory_non_core",
+  "same_culture_group",
+  "non_accepted_culture",
+  "accepted_culture_demoted",
+  "non_accepted_culture_republic",
+  "occupied",
+  "under_siege",
+  "slaves_raided",
+  "tolerance",
+  "intolerance",
+  "unrest",
+  "nationalism",
+  "harsh_treatment",
+  "local_autonomy_multiplicative",
+  "local_autonomy",
+  "local_autonomy_trade_company_multiplicative",
+  "local_autonomy_trade_company",
+  "recent_uprising",
+  "friendly_regiments",
+  "active_missionary",
+  "national_defense",
+  "resource_depleted",
+  "in_trade_company",
+  "left_trade_company",
+  "base_values",
+  "ai_nation",
+  "trade_efficiency",
+  "production_efficiency",
+  "country_development",
+  "root_out_corruption",
+  "luck",
+  "num_objectives_fullfilled",
+  "liberty_desire",
+  "land_forcelimit",
+  "naval_forcelimit",
+  "all_nations",
+  "subject_nation",
+  "vassal_nation",
+  "primitive_nation",
+  "subject_tax_modifier",
+  "same_religion_subject_bonus_mod",
+  "maintained_forts",
+  "autonomy_increased",
+  "autonomy_decreased",
+  "drilling_armies",
+  "tutorial_colonial_range",
+  "diplomatic_reputation",
+  "tolerance_own",
+  "tolerance_heretic",
+  "tolerance_heathen",
+  "num_accepted_cultures",
+  "average_overseas_subject_liberty_desire",
+  "reverse_average_overseas_subject_liberty_desire",
+  "average_subject_liberty_desire",
+  "reverse_average_subject_liberty_desire",
+  "average_global_autonomy",
+  "reverse_average_global_autonomy",
+  "manpower_percentage",
+  "reverse_manpower_percentage",
+  "sailors_percentage",
+  "reverse_sailors_percentage",
+]
+
+[gen_modifiers]
+
+# List of paths to 'estates' folders to parse for estates.
+#
+# Used in the generation of <estate> variable modifiers.
+estates = [
+  "C:/Steam/steamapps/common/Europa Universalis IV/common/estates",
+  "./source_mod/common/factions",
+]
+
+# List of paths to 'factions' folders to parse for factions.
+#
+# Used in the generation of <faction> variable modifiers.
+factions = [
+  "C:/Steam/steamapps/common/Europa Universals IV/common/factions",
+  "./source_mod/common/factions",
+]
+
+# List of factions to ignore when parsing factions.
+#
+# These are used for variable export purposes, so we discard them to
+# avoid interfering with triggers.
+ignore_factions = ["pronoia_amount_check", "soyurghals_amount_check"]
+
+
+# List of paths to 'government_mechanics' directories to parse for
+# government power types.
+#
+# Used in the generation of <government_power_type_id> variable
+# modifiers.
+government_mechanics = [
+  "C:/Steam/steamapps/common/Europa Universalis IV/common/government_mechanics",
+  "./source_mod/common/government_mechanics",
+]
+
+# List of technology types.
+#
+# Used in the generation of <tech> variable modifiers.
+#
+# This should generally be left unmodified, but is available for the
+# few cases where mods add additional technology types.
+tech_types = ["adm_tech", "dip_tech", "mil_tech"]
+
+# The default multiplier to use for most modifiers.
+multiplier = 10
+
+# List of modifiers to ignore when performing multiplications.
+ignores = [
+  "<estate>_influence_modifier",
+  "<estate>_loyalty_modifier",
+  "all_estate_influence_modifier",
+  "all_estate_loyalty_equilibrium",
+  "fort_level",
+  "hostile_disembark_speed",
+  "land_forcelimit_modifier",
+  "land_forcelimit",
+  "local_friendly_movement_speed",
+  "local_hostile_movement_speed",
+  "naval_forcelimit_modifier",
+  "naval_forcelimit",
+  "vassal_forcelimit_bonus",
+]
+
+# Table of modifiers that receive multipliers differing from the
+# default.
+[gen_modifiers.alternatives]
+development_cost_modifier = 2
+diplomatic_upkeep = 2
+diplomats = 2
+election_cycle = 1.5
+global_manpower_modifier = 2
+global_sailor_modifier = 2
+local_development_cost_modifier = 2
+local_manpower_modifier = 2
+local_sailors_modifier = 2
+manpower_against_imperial_enemies = 2
+manpower_in_accepted_culture_provinces = 2
+manpower_in_own_culture_provinces = 2
+manpower_in_true_faith_provinces = 2
+mercenary_manpower = 2
+merchants = 2
+vassal_manpower_bonus = 2
+vassal_sailors_bonus = 2
